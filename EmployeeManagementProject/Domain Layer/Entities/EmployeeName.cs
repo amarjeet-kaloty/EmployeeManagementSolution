@@ -26,5 +26,10 @@ namespace EmployeeManagementProject.Domain_Layer.Entities
 
             FullName = fullName;
         }
+
+        public override string ToString()
+        {
+            return FullName;
+        }
     }
 }

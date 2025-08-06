@@ -18,12 +18,12 @@ namespace EmployeeManagementProject.Application_Layer.Command.EmployeeCommands
         public async Task<int> Handle(UpdateEmployeeCommand request, CancellationToken cancellationToken)
         {
             Employee employee = await _employeeRepository.GetEmployeeByIdAsync(request.Id);
+
             if (employee == null)
                 return 0;
-            employee.Name = request.Name;
-            employee.Address = request.Address;
-            employee.Email = request.Email;
-            employee.Phone = request.Phone;
+
+            employee.UpdateDetails(request.Name, request.Address, request.Email, request.Phone);
+
             _employeeRepository.UpdateEmployee(employee);
 
             int affectedRows = await _unitOfWork.SaveChangesAsync(cancellationToken);

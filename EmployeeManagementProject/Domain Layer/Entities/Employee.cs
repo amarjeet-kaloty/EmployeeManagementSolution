@@ -27,5 +27,26 @@ namespace EmployeeManagementProject.Domain_Layer.Entities
             Email = email;
             Phone = phone;
         }
+
+        public static Employee Create(string name, string address, string email, string? phone)
+        {
+            if (string.IsNullOrWhiteSpace(address)) 
+                throw new ArgumentException("Address is required.", nameof(address));
+
+            if (string.IsNullOrWhiteSpace(email))
+                throw new ArgumentException("Email is required.", nameof(email));
+
+            EmployeeName employeeName = new EmployeeName(name);
+
+            return new Employee(employeeName, address, email, phone);
+        }
+
+        public void UpdateDetails(EmployeeName name, string address, string email, string? phone)
+        {
+            Name = name;
+            Address = address;
+            Email = email;
+            Phone = phone;
+        }
     }
 }

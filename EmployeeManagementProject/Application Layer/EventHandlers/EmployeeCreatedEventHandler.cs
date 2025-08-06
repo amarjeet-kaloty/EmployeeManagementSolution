@@ -14,7 +14,7 @@ namespace EmployeeManagementProject.Application_Layer.EventHandlers
 
         public async Task Handle(EmployeeCreatedEvent notification, CancellationToken cancellationToken)
         {
-            _logger.LogInformation($"Employee Created Event: Employee with ID {notification._employee.Id} Name '{notification._employee.Name}' was created. ");
+            _logger.LogInformation($"Employee Created Event: Employee with the Name '{notification._employee.Name}' was created. ");
 
             await Task.CompletedTask;
         }
