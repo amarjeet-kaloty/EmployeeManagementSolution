@@ -2,6 +2,7 @@ using EmployeeManagementProject.Application_Layer.Command.EmployeeCommands;
 using EmployeeManagementProject.Application_Layer.Query.EmployeeQueries;
 using EmployeeManagementProject.Domain_Layer.Entities;
 using EmployeeManagementProject.Presentation_Layer.Controllers;
+using EmployeeManagementProject.Presentation_Layer.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using NSubstitute;
@@ -10,38 +11,43 @@ namespace UnitTestDevelopmentTraining
 {
     public class EmployeeControllerTests
     {
+        private readonly IMediator _mediator;
+        private readonly EmployeeController _controller;
+
+        public EmployeeControllerTests()
+        {
+            _mediator = Substitute.For<IMediator>();
+            _controller = new EmployeeController(_mediator);
+        }
+
         [Fact]
         public async Task GetEmployeeList_ReturnListOfAllEmployees_SuccessAsync()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
-
             var expectedEmployees = new List<Employee>
             {
-                new Employee(
-                    name: CreateUniqueTestEmployeeName("Test Employee", 1),
+                Employee.Create(
+                    name: "Test Employee1",
                     address: "123 Praline Ave",
                     email: "employee1@gmail.com",
                     phone: "404-111-1234"
-                ) { Id = 1 },
+                ),
 
-                new Employee(
-                    name: CreateUniqueTestEmployeeName("Test Employee", 2),
+                Employee.Create(
+                    name: "Test Employee2",
                     address: "456 Orange Lane",
                     email: "employee2@gmail.com",
                     phone: "505-000-7896"
-                ) { Id = 2 }
+                )
             };
 
-            mediator.Send(Arg.Any<GetEmployeeListQuery>()).Returns(expectedEmployees);
-
-            var controller = new EmployeeController(mediator);
+            _mediator.Send(Arg.Any<GetEmployeeListQuery>()).Returns(expectedEmployees);
 
             // Act
-            var result = await controller.GetEmployeeList();
+            var result = await _controller.GetEmployeeList();
 
             // Assert
-            await mediator.Received(1).Send(Arg.Any<GetEmployeeListQuery>());
+            await _mediator.Received(1).Send(Arg.Any<GetEmployeeListQuery>());
 
             Assert.NotNull(result);
             Assert.Equal(expectedEmployees.Count, result.Count);
@@ -59,16 +65,13 @@ namespace UnitTestDevelopmentTraining
         public async Task GetEmployeeList_ReturnsEmptyList_WhenNoEmployeesExist()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
-            mediator.Send(Arg.Any<GetEmployeeListQuery>()).Returns(new List<Employee>());
-
-            var controller = new EmployeeController(mediator);
+            _mediator.Send(Arg.Any<GetEmployeeListQuery>()).Returns(new List<Employee>());
 
             // Act
-            var result = await controller.GetEmployeeList();
+            var result = await _controller.GetEmployeeList();
 
             // Assert
-            await mediator.Received(1).Send(Arg.Any<GetEmployeeListQuery>());
+            await _mediator.Received(1).Send(Arg.Any<GetEmployeeListQuery>());
             Assert.NotNull(result);
             Assert.Empty(result);
         }
@@ -77,26 +80,23 @@ namespace UnitTestDevelopmentTraining
         public async Task GetEmployeeById_ValidId_ReturnsEmployee()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
-
+            EmployeeName employeeName = new EmployeeName("Test Employee1");
             Employee expectedEmployee = new Employee
             (
-                name: CreateUniqueTestEmployeeName("Test Employee", 1),
+                name: employeeName,
                 address: "123 Praline Ave",
                 email: "employee1@gmail.com",
                 phone: "404-111-1234"
             )
             { Id = 1 };
 
-            mediator.Send(Arg.Any<GetEmployeeByIdQuery>()).Returns(expectedEmployee);
-
-            var controller = new EmployeeController(mediator);
+            _mediator.Send(Arg.Any<GetEmployeeByIdQuery>()).Returns(expectedEmployee);
 
             // Act
-            var result = await controller.GetEmployee(expectedEmployee.Id);
+            var result = await _controller.GetEmployee(expectedEmployee.Id);
 
             // Assert
-            await mediator.Received(1).Send(Arg.Any<GetEmployeeByIdQuery>());
+            await _mediator.Received(1).Send(Arg.Any<GetEmployeeByIdQuery>());
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var actualEmployee = Assert.IsType<Employee>(okResult.Value);
             Assert.Equal(expectedEmployee.Id, actualEmployee.Id);
@@ -110,17 +110,15 @@ namespace UnitTestDevelopmentTraining
         public async Task GetEmployeeById_InValidId_FailsToReturnEmployee()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
-            mediator.Send(Arg.Any<GetEmployeeByIdQuery>()).Returns(Task.FromResult<Employee>(null));
+            _mediator.Send(Arg.Any<GetEmployeeByIdQuery>()).Returns(Task.FromResult<Employee>(null));
 
-            var controller = new EmployeeController(mediator);
             var nonExistentId = 101;
 
             // Act
-            var result = await controller.GetEmployee(nonExistentId);
+            var result = await _controller.GetEmployee(nonExistentId);
 
             // Assert
-            await mediator.Received(1).Send(Arg.Any<GetEmployeeByIdQuery>());
+            await _mediator.Received(1).Send(Arg.Any<GetEmployeeByIdQuery>());
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
             Assert.Equal($"Employee with ID {nonExistentId} not found.", notFoundResult.Value);
         }
@@ -129,28 +127,41 @@ namespace UnitTestDevelopmentTraining
         public async Task AddEmployee_ValidEmployee_ReturnsCreated()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
+            CreateEmployeeDTO employeeDto = new CreateEmployeeDTO
+            {
+                Name = "Test Employee 1",
+                Address = "123 Praline Ave",
+                Email = "employee1@gmail.com",
+                Phone = "404-111-1234"
+            };
 
-            Employee newEmployee = new Employee
+            Employee newEmployee = Employee.Create
             (
-                name: CreateUniqueTestEmployeeName("Test Employee", 1),
-                address: "123 Praline Ave",
-                email: "employee1@gmail.com",
-                phone: "404-111-1234"
-            )
-            { Id = 1 };
+                employeeDto.Name,
+                employeeDto.Address,
+                employeeDto.Email,
+                employeeDto.Phone
+            );
+            newEmployee.Id = 1;
 
-            mediator.Send(Arg.Any<CreateEmployeeCommand>()).Returns(newEmployee);
-
-            var controller = new EmployeeController(mediator);
+            _mediator.Send(Arg.Is<CreateEmployeeCommand>(cmd =>
+                cmd.Name.FullName == employeeDto.Name &&
+                cmd.Address == employeeDto.Address &&
+                cmd.Email == employeeDto.Email))
+            .Returns(newEmployee);
 
             // Act
-            var result = await controller.AddEmployee(newEmployee);
+            var result = await _controller.AddEmployee(employeeDto);
 
             // Assert
-            await mediator.Received(1).Send(Arg.Any<CreateEmployeeCommand>());
+            await _mediator.Received(1).Send(Arg.Is<CreateEmployeeCommand>(cmd =>
+             cmd.Name.FullName == employeeDto.Name &&
+             cmd.Address == employeeDto.Address &&
+             cmd.Email == employeeDto.Email));
+
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var actualEmployee = Assert.IsType<Employee>(okResult.Value);
+
             Assert.Equal(newEmployee.Id, actualEmployee.Id);
             Assert.Equal(newEmployee.Name, actualEmployee.Name);
             Assert.Equal(newEmployee.Address, actualEmployee.Address);
@@ -159,62 +170,77 @@ namespace UnitTestDevelopmentTraining
         }
 
         [Fact]
-        public async Task AddEmployee_InValidEmployee_ReturnsBadRequest()
+        public async Task AddEmployee_InValidEmployeeModel_ReturnsBadRequest()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
+            CreateEmployeeDTO invalidEmployeeDto = new CreateEmployeeDTO
+            {
+                Name = "Test Employee 1",
+                Address = "123 Praline Ave",
+                Email = null,
+                Phone = "404-111-1234"
+            };
 
-            Employee invalidEmployee = new Employee
-             (
-                 name: CreateUniqueTestEmployeeName("null", 0),
-                 address: "123 Praline Ave",
-                 email: null,
-                 phone: "404-111-1234"
-             )
-            { Id = 0 };
-
-            var controller = new EmployeeController(mediator);
-
-            controller.ModelState.AddModelError(nameof(Employee.Name), "Name is required.");
-            controller.ModelState.AddModelError(nameof(Employee.Email), "Invalid email format.");
+            _controller.ModelState.AddModelError(nameof(Employee.Email), "Invalid email format.");
 
             // Act
-            var result = await controller.AddEmployee(invalidEmployee);
+            var result = await _controller.AddEmployee(invalidEmployeeDto);
 
             // Assert
-            await mediator.DidNotReceive().Send(Arg.Any<CreateEmployeeCommand>());
+            await _mediator.DidNotReceive().Send(Arg.Any<CreateEmployeeCommand>());
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            var modelState = Assert.IsType<SerializableError>(badRequestResult.Value); 
-            Assert.True(modelState.ContainsKey(nameof(Employee.Name)));
-            Assert.Contains("Name is required.", modelState[nameof(Employee.Name)] as string[]);
+            var modelState = Assert.IsType<SerializableError>(badRequestResult.Value);
             Assert.True(modelState.ContainsKey(nameof(Employee.Email)));
             Assert.Contains("Invalid email format.", modelState[nameof(Employee.Email)] as string[]);
+        }
+
+        [Fact]
+        public async Task AddEmployee_InValidEmployee_ThrowsException()
+        {
+            // Arrange
+            CreateEmployeeDTO employeeDto = new CreateEmployeeDTO
+            {
+                Name = null,
+                Address = "123 Praline Ave",
+                Email = "employee1@gmail.com",
+                Phone = "404-111-1234"
+            };
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(async () =>
+            {
+                await _controller.AddEmployee(employeeDto);
+            });
         }
 
         [Fact]
         public async Task AddEmployee_MediatorReturnsNull_ReturnsInternalServerError()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
+            CreateEmployeeDTO employeeDto = new CreateEmployeeDTO
+            {
+                Name = "Test Employee 1",
+                Address = "123 Praline Ave",
+                Email = "employee1@gmail.com",
+                Phone = "404-111-1234"
+            };
 
-            mediator.Send(Arg.Any<CreateEmployeeCommand>()).Returns(Task.FromResult<Employee>(null));
-
-            var controller = new EmployeeController(mediator);
-
-            Employee validEmployee = new Employee
+            Employee validEmployee = Employee.Create
             (
-                name: CreateUniqueTestEmployeeName("Test Employee", 1),
-               address: "456 Oak St",
-               email: "employee1@gmail.com",
-               phone: "404-111-1234"
-            )
-            { Id = 1 };
+                employeeDto.Name,
+                employeeDto.Address,
+                employeeDto.Email,
+                employeeDto.Phone
+            );
+            validEmployee.Id = 1;
+
+            _mediator.Send(Arg.Any<CreateEmployeeCommand>()).Returns(Task.FromResult<Employee>(null));
 
             // Act
-            var result = await controller.AddEmployee(validEmployee);
+            var result = await _controller.AddEmployee(employeeDto);
 
             // Assert
-            await mediator.Received(1).Send(Arg.Any<CreateEmployeeCommand>());
+            await _mediator.Received(1).Send(Arg.Any<CreateEmployeeCommand>());
             var statusCodeResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, statusCodeResult.StatusCode);
             Assert.Equal("Failed to create employee. An unexpected error occurred.", statusCodeResult.Value);
@@ -224,94 +250,67 @@ namespace UnitTestDevelopmentTraining
         public async Task UpdateEmployee_ValidEmployee_ReturnsOkWithUpdatedId()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
             int employeeIdToUpdate = 1;
-            Employee validEmployee = new Employee
-            (
-                name: CreateUniqueTestEmployeeName("Update Name", 1),
-                address: "Updated Address",
-                email: "updated@gmail.com",
-                phone: "404-111-1234"
-            )
-            { Id = employeeIdToUpdate };
 
-            mediator.Send(Arg.Any<UpdateEmployeeCommand>()).Returns(Task.FromResult(employeeIdToUpdate));
+            UpdateEmployeeDTO updateEmployeeDTO = new UpdateEmployeeDTO
+            {
+                Name = "Update Name",
+                Address = "Updated Address",
+                Email = "updated@gmail.com",
+                Phone = "404-111-1234"
+            };
 
-            var controller = new EmployeeController(mediator);
+            _mediator.Send(Arg.Any<UpdateEmployeeCommand>()).Returns(Task.FromResult(employeeIdToUpdate));
 
             // Act
-            var result = await controller.UpdateEmployee(validEmployee);
+            var result = await _controller.UpdateEmployee(employeeIdToUpdate, updateEmployeeDTO);
 
             // Assert
-            await mediator.Received(1).Send(Arg.Is<UpdateEmployeeCommand>(cmd =>
-                cmd.Id == validEmployee.Id &&
-                cmd.Name == validEmployee.Name &&
-                cmd.Address == validEmployee.Address &&
-                cmd.Email == validEmployee.Email &&
-                cmd.Phone == validEmployee.Phone
-            ));
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var actualUpdatedId = Assert.IsType<int>(okResult.Value);
             Assert.Equal(employeeIdToUpdate, actualUpdatedId);
         }
 
         [Fact]
-        public async Task UpdateEmployee_InValidEmployee_ReturnsBadRequest()
+        public async Task UpdateEmployee_InValidEmployee_ThrowsException()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
             int employeeIdToUpdate = 1;
-            Employee invalidEmployee = new Employee
-            (
-                name: CreateUniqueTestEmployeeName(null, 0),
-                address: "123 Praline Ave",
-                email: null,
-                phone: "404-111-1234"
-            )
-            { Id = employeeIdToUpdate };
 
-            var controller = new EmployeeController(mediator);
+            UpdateEmployeeDTO updateEmployeeDTO = new UpdateEmployeeDTO
+            {
+                Name = null,
+                Address = "Updated Address",
+                Email = null,
+                Phone = "404-111-1234"
+            };
 
-            controller.ModelState.AddModelError(nameof(Employee.Name), "Name is required.");
-            controller.ModelState.AddModelError(nameof(Employee.Email), "Invalid email format.");
-
-            // Act
-            var result = await controller.UpdateEmployee(invalidEmployee);
-
-            // Assert
-            await mediator.DidNotReceive().Send(Arg.Any<UpdateEmployeeCommand>());
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            var modelState = Assert.IsType<SerializableError>(badRequestResult.Value);
-            Assert.True(modelState.ContainsKey(nameof(Employee.Name)));
-            Assert.Contains("Name is required.", modelState[nameof(Employee.Name)] as string[]);
-            Assert.True(modelState.ContainsKey(nameof(Employee.Email)));
-            Assert.Contains("Invalid email format.", modelState[nameof(Employee.Email)] as string[]);
+            await Assert.ThrowsAsync<ArgumentException>(async () =>
+            {
+                await _controller.UpdateEmployee(employeeIdToUpdate, updateEmployeeDTO);
+            });
         }
 
         [Fact]
         public async Task UpdateEmployee_EmployeeNotFound_ReturnsNotFoundResult()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
             int nonExistentEmployeeId = 999;
-            Employee validEmployeeInput = new Employee
-            (
-               name: CreateUniqueTestEmployeeName("Test Employee", 1),
-               address: "Valid Address",
-               email: "valid@gmail.com",
-               phone: "404-123-1234"
-            )
-            { Id = nonExistentEmployeeId };
+            UpdateEmployeeDTO updateEmployeeDTO = new UpdateEmployeeDTO
+            {
+                Name = "Update Name",
+                Address = "Updated Address",
+                Email = null,
+                Phone = "404-111-1234"
+            };
 
-            mediator.Send(Arg.Any<UpdateEmployeeCommand>()).Returns(Task.FromResult(0));
-
-            var controller = new EmployeeController(mediator);
+            _mediator.Send(Arg.Any<UpdateEmployeeCommand>()).Returns(Task.FromResult(0));
 
             // Act
-            var result = await controller.UpdateEmployee(validEmployeeInput);
+            var result = await _controller.UpdateEmployee(nonExistentEmployeeId, updateEmployeeDTO);
 
             // Assert
-            await mediator.Received(1).Send(Arg.Is<UpdateEmployeeCommand>(cmd => cmd.Id == nonExistentEmployeeId));
+            await _mediator.Received(1).Send(Arg.Is<UpdateEmployeeCommand>(cmd => cmd.Id == nonExistentEmployeeId));
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
             Assert.Equal($"Employee with ID {nonExistentEmployeeId} not found for update.", notFoundResult.Value);
         }
@@ -320,18 +319,15 @@ namespace UnitTestDevelopmentTraining
         public async Task DeleteEmployee_ValidId_ReturnsOkWithDeletedId()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
             int employeeIdToDelete = 5;
 
-            mediator.Send(Arg.Any<DeleteEmployeeCommand>()).Returns(1);
-
-            var controller = new EmployeeController(mediator);
+            _mediator.Send(Arg.Any<DeleteEmployeeCommand>()).Returns(1);
 
             // Act
-            var result = await controller.DeleteEmployee(employeeIdToDelete);
+            var result = await _controller.DeleteEmployee(employeeIdToDelete);
 
             // Assert
-            await mediator.Received(1).Send(Arg.Is<DeleteEmployeeCommand>(cmd => cmd.Id == employeeIdToDelete));
+            await _mediator.Received(1).Send(Arg.Is<DeleteEmployeeCommand>(cmd => cmd.Id == employeeIdToDelete));
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var actualDeletedId = Assert.IsType<int>(okResult.Value);
             Assert.Equal(employeeIdToDelete, actualDeletedId);
@@ -342,16 +338,13 @@ namespace UnitTestDevelopmentTraining
         public async Task DeleteEmployee_InvalidId_ReturnsBadRequest()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
             int invalidId = -5;
 
-            var controller = new EmployeeController(mediator);
-
             // Act
-            var result = await controller.DeleteEmployee(invalidId);
+            var result = await _controller.DeleteEmployee(invalidId);
 
             // Assert
-            await mediator.DidNotReceive().Send(Arg.Any<DeleteEmployeeCommand>());
+            await _mediator.DidNotReceive().Send(Arg.Any<DeleteEmployeeCommand>());
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal(400, badRequestResult.StatusCode);
             Assert.Equal("Employee ID must be a positive integer.", badRequestResult.Value);
@@ -361,31 +354,18 @@ namespace UnitTestDevelopmentTraining
         public async Task DeleteEmployee_EmployeeNotFound_ReturnsNotFoundResult()
         {
             // Arrange
-            var mediator = Substitute.For<IMediator>();
             int nonExistentId = 999;
 
-            mediator.Send(Arg.Any<DeleteEmployeeCommand>()).Returns(Task.FromResult(0));
-
-            var controller = new EmployeeController(mediator);
+            _mediator.Send(Arg.Any<DeleteEmployeeCommand>()).Returns(Task.FromResult(0));
 
             // Act
-            var result = await controller.DeleteEmployee(nonExistentId);
+            var result = await _controller.DeleteEmployee(nonExistentId);
 
             // Assert
-            await mediator.Received(1).Send(Arg.Is<DeleteEmployeeCommand>(cmd => cmd.Id == nonExistentId));
+            await _mediator.Received(1).Send(Arg.Is<DeleteEmployeeCommand>(cmd => cmd.Id == nonExistentId));
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
             Assert.Equal(404, notFoundResult.StatusCode);
             Assert.Equal($"Employee with ID {nonExistentId} not found for deletion.", notFoundResult.Value);
         }
-
-        #region Helper Methods
-
-        public EmployeeName CreateUniqueTestEmployeeName(string fullName, int uniqueIdentifier)
-        {
-            EmployeeName employeeName = new EmployeeName(fullName + uniqueIdentifier);
-            return employeeName;
-        }
-
-        #endregion Helper Methods
     }
 }

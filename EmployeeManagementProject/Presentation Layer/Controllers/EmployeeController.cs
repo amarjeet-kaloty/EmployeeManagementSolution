@@ -1,6 +1,7 @@
 ﻿using EmployeeManagementProject.Application_Layer.Command.EmployeeCommands;
 using EmployeeManagementProject.Application_Layer.Query.EmployeeQueries;
 using EmployeeManagementProject.Domain_Layer.Entities;
+using EmployeeManagementProject.Presentation_Layer.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 
@@ -63,19 +64,22 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
         /// The newly created object, including its assigned ID.
         /// </returns>
         [HttpPost]
-        public async Task<ActionResult<Employee>> AddEmployee(Employee employee)
+        public async Task<ActionResult<Employee>> AddEmployee([FromBody] CreateEmployeeDTO employeeDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            Employee newEmployee = await _mediator.Send(new CreateEmployeeCommand(
-                employee.Name,
-                employee.Address,
-                employee.Email,
-                employee.Phone
-                ));
+            EmployeeName employeeName = new EmployeeName(employeeDto.Name);
+            CreateEmployeeCommand command = new CreateEmployeeCommand(
+                employeeName,
+                employeeDto.Address,
+                employeeDto.Email,
+                employeeDto.Phone
+            );
+
+            Employee newEmployee = await _mediator.Send(command);
 
             if (newEmployee == null)
             {
@@ -93,23 +97,27 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
         /// An integer representing the number of rows affected.
         /// </returns>
         [HttpPut("{id}")]
-        public async Task<ActionResult<int>> UpdateEmployee(Employee employee)
+        public async Task<ActionResult<int>> UpdateEmployee(int id, [FromBody] UpdateEmployeeDTO employeeDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
 
-            int updatedEmployee = await _mediator.Send(new UpdateEmployeeCommand(
-               employee.Id,
-               employee.Name,
-               employee.Address,
-               employee.Email,
-               employee.Phone));
+            EmployeeName employeeName = new EmployeeName(employeeDto.Name);
+            var command = new UpdateEmployeeCommand(
+                id,
+                employeeName,
+                employeeDto.Address,
+                employeeDto.Email,
+                employeeDto.Phone
+            );
+
+            int updatedEmployee = await _mediator.Send(command);
 
             if (updatedEmployee == 0)
             {
-                return NotFound($"Employee with ID {employee.Id} not found for update.");
+                return NotFound($"Employee with ID {id} not found for update.");
             }
 
             return Ok(updatedEmployee);
