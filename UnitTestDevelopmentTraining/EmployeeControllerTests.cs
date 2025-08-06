@@ -81,14 +81,13 @@ namespace UnitTestDevelopmentTraining
         {
             // Arrange
             EmployeeName employeeName = new EmployeeName("Test Employee1");
-            Employee expectedEmployee = new Employee
-            (
+            Employee expectedEmployee = new Employee(
+                id: 1,
                 name: employeeName,
                 address: "123 Praline Ave",
                 email: "employee1@gmail.com",
                 phone: "404-111-1234"
-            )
-            { Id = 1 };
+            );
 
             _mediator.Send(Arg.Any<GetEmployeeByIdQuery>()).Returns(expectedEmployee);
 
@@ -135,14 +134,14 @@ namespace UnitTestDevelopmentTraining
                 Phone = "404-111-1234"
             };
 
-            Employee newEmployee = Employee.Create
+            Employee newEmployee = new Employee
             (
-                employeeDto.Name,
-                employeeDto.Address,
-                employeeDto.Email,
-                employeeDto.Phone
+                id: 1,
+                name: new EmployeeName(employeeDto.Name),
+                address: employeeDto.Address,
+                email: employeeDto.Email,
+                phone: employeeDto.Phone
             );
-            newEmployee.Id = 1;
 
             _mediator.Send(Arg.Is<CreateEmployeeCommand>(cmd =>
                 cmd.Name.FullName == employeeDto.Name &&
@@ -225,14 +224,14 @@ namespace UnitTestDevelopmentTraining
                 Phone = "404-111-1234"
             };
 
-            Employee validEmployee = Employee.Create
+            Employee validEmployee = new Employee
             (
-                employeeDto.Name,
-                employeeDto.Address,
-                employeeDto.Email,
-                employeeDto.Phone
+                id: 1,
+                name: new EmployeeName(employeeDto.Name),
+                address: employeeDto.Address,
+                email: employeeDto.Email,
+                phone: employeeDto.Phone
             );
-            validEmployee.Id = 1;
 
             _mediator.Send(Arg.Any<CreateEmployeeCommand>()).Returns(Task.FromResult<Employee>(null));
 

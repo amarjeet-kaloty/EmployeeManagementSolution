@@ -20,7 +20,7 @@ namespace EmployeeManagementProject.Domain_Layer.Entities
         {
         }
 
-        public Employee(EmployeeName name, string address, string email, string? phone) : base()
+        public Employee(int id, EmployeeName name, string address, string email, string? phone) : base(id)
         {
             Name = name;
             Address = address;
@@ -38,7 +38,13 @@ namespace EmployeeManagementProject.Domain_Layer.Entities
 
             EmployeeName employeeName = new EmployeeName(name);
 
-            return new Employee(employeeName, address, email, phone);
+            Employee employee = new Employee();
+            employee.Name = employeeName;
+            employee.Address = address;
+            employee.Email = email;
+            employee.Phone = phone;
+
+            return employee;
         }
 
         public void UpdateDetails(EmployeeName name, string address, string email, string? phone)
