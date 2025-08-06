@@ -1,0 +1,27 @@
+# Visual Studio 2022
+.vs/
+*.suo
+*.user
+*.userosf
+*.sln.docstates
+
+# Build and project files
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+*.pdb
+*.dll
+*.exe
+
+# NuGet
+.nuget/
+packages/
+*.nupkg
+
+# Test Results
+TestResults/
+*.trx
+
+# Other
+.DS_Store
