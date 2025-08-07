@@ -59,7 +59,7 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
         /// <summary>
         /// Adds an employee to the system.
         /// </summary>
-        /// <param name="employee">The object containing the details of the employee to be added.</param>
+        /// <param name="employeeDto">The data transfer object containing the details of the new employee to be added.</param>
         /// <returns>
         /// The newly created object, including its assigned ID.
         /// </returns>
@@ -92,7 +92,7 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
         /// <summary>
         /// Updates the existing employee in the system.
         /// </summary>
-        /// <param name="employee">The object containing the details of the employee to be updated.</param>
+        /// <param name="employeeDto">The data transfer object containing the details of the employee to be updated.</param>
         /// <returns>
         /// An integer representing the number of rows affected.
         /// </returns>
