@@ -5,7 +5,7 @@ namespace EmployeeManagementProject.Application_Layer.Command.EmployeeCommands
 {
     public class CreateEmployeeCommand : IRequest<Employee>
     {
-        public EmployeeName Name { get; set; }
+        public string Name { get; set; }
 
         public string Address { get; set; }
 
@@ -13,7 +13,7 @@ namespace EmployeeManagementProject.Application_Layer.Command.EmployeeCommands
 
         public string Phone { get; set; }
 
-        public CreateEmployeeCommand(EmployeeName name, string address, string email, string phone)
+        public CreateEmployeeCommand(string name, string address, string email, string phone)
         {
             Name = name;
             Address = address;

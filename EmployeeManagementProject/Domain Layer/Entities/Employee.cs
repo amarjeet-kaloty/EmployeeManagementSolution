@@ -37,7 +37,6 @@ namespace EmployeeManagementProject.Domain_Layer.Entities
                 throw new ArgumentException("Email is required.", nameof(email));
 
             EmployeeName employeeName = new EmployeeName(name);
-
             Employee employee = new Employee();
             employee.Name = employeeName;
             employee.Address = address;

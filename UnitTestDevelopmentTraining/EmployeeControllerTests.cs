@@ -144,7 +144,7 @@ namespace UnitTestDevelopmentTraining
             );
 
             _mediator.Send(Arg.Is<CreateEmployeeCommand>(cmd =>
-                cmd.Name.FullName == employeeDto.Name &&
+                cmd.Name == employeeDto.Name &&
                 cmd.Address == employeeDto.Address &&
                 cmd.Email == employeeDto.Email))
             .Returns(newEmployee);
@@ -154,7 +154,7 @@ namespace UnitTestDevelopmentTraining
 
             // Assert
             await _mediator.Received(1).Send(Arg.Is<CreateEmployeeCommand>(cmd =>
-             cmd.Name.FullName == employeeDto.Name &&
+             cmd.Name == employeeDto.Name &&
              cmd.Address == employeeDto.Address &&
              cmd.Email == employeeDto.Email));
 
@@ -191,25 +191,6 @@ namespace UnitTestDevelopmentTraining
             var modelState = Assert.IsType<SerializableError>(badRequestResult.Value);
             Assert.True(modelState.ContainsKey(nameof(Employee.Email)));
             Assert.Contains("Invalid email format.", modelState[nameof(Employee.Email)] as string[]);
-        }
-
-        [Fact]
-        public async Task AddEmployee_InValidEmployee_ThrowsException()
-        {
-            // Arrange
-            CreateEmployeeDTO employeeDto = new CreateEmployeeDTO
-            {
-                Name = null,
-                Address = "123 Praline Ave",
-                Email = "employee1@gmail.com",
-                Phone = "404-111-1234"
-            };
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
-            {
-                await _controller.AddEmployee(employeeDto);
-            });
         }
 
         [Fact]

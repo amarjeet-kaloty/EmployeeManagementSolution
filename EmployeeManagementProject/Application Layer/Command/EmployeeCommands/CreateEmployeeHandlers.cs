@@ -21,7 +21,7 @@ namespace EmployeeManagementProject.Application_Layer.Command.EmployeeCommands
         public async Task<Employee> Handle(CreateEmployeeCommand request, CancellationToken cancellationToken)
         {
            
-            Employee employee = Employee.Create(request.Name.ToString(), request.Address, request.Email, request.Phone);
+            Employee employee = Employee.Create(request.Name, request.Address, request.Email, request.Phone);
 
             await _employeeRepository.AddEmployeeAsync(employee);
 

@@ -71,9 +71,8 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
                 return BadRequest(ModelState);
             }
 
-            EmployeeName employeeName = new EmployeeName(employeeDto.Name);
             CreateEmployeeCommand command = new CreateEmployeeCommand(
-                employeeName,
+                employeeDto.Name,
                 employeeDto.Address,
                 employeeDto.Email,
                 employeeDto.Phone
