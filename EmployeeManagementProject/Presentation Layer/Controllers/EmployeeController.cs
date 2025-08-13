@@ -19,44 +19,6 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
         }
 
         /// <summary>
-        /// Retrieves a list of all employees.
-        /// </summary>
-        /// <returns>
-        /// A List of Employees or an empty list if no employees are found.
-        /// </returns>
-        [HttpGet]
-        public async Task<List<Employee>> GetEmployeeList()
-        {
-            var employeeList = await _mediator.Send(new GetEmployeeListQuery());
-            return employeeList;
-        }
-
-        /// <summary>
-        /// Retrieves a specific employee by their unique identifier.
-        /// </summary>
-        /// <param name="id">The unique integer identifier of the employee to retrieve. Must be a positive integer.</param>
-        /// <returns>
-        /// An employee object corresponding to the provided unique identifier, if one exists.
-        /// </returns>
-        [HttpGet("{id}")]
-        public async Task<ActionResult<Employee>> GetEmployee(int id)
-        {
-            if (id <= 0)
-            {
-                return BadRequest("Employee ID must be a positive integer.");
-            }
-
-            Employee employee = await _mediator.Send(new GetEmployeeByIdQuery() { Id = id });
-
-            if (employee == null)
-            {
-                return NotFound($"Employee with ID {id} not found.");
-            }
-
-            return Ok(employee);
-        }
-
-        /// <summary>
         /// Adds an employee to the system.
         /// </summary>
         /// <param name="employeeDto">The data transfer object containing the details of the new employee to be added.</param>
@@ -66,11 +28,6 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
         [HttpPost]
         public async Task<ActionResult<Employee>> AddEmployee([FromBody] CreateEmployeeDTO employeeDto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
             CreateEmployeeCommand command = new CreateEmployeeCommand(
                 employeeDto.Name,
                 employeeDto.Address,
@@ -145,6 +102,44 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
             }
 
             return Ok(id);
+        }
+
+        /// <summary>
+        /// Retrieves a list of all employees.
+        /// </summary>
+        /// <returns>
+        /// A List of Employees or an empty list if no employees are found.
+        /// </returns>
+        [HttpGet]
+        public async Task<List<Employee>> GetEmployeeList()
+        {
+            var employeeList = await _mediator.Send(new GetEmployeeListQuery());
+            return employeeList;
+        }
+
+        /// <summary>
+        /// Retrieves a specific employee by their unique identifier.
+        /// </summary>
+        /// <param name="id">The unique integer identifier of the employee to retrieve. Must be a positive integer.</param>
+        /// <returns>
+        /// An employee object corresponding to the provided unique identifier, if one exists.
+        /// </returns>
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Employee>> GetEmployee(int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest("Employee ID must be a positive integer.");
+            }
+
+            Employee employee = await _mediator.Send(new GetEmployeeByIdQuery() { Id = id });
+
+            if (employee == null)
+            {
+                return NotFound($"Employee with ID {id} not found.");
+            }
+
+            return Ok(employee);
         }
     }
 }

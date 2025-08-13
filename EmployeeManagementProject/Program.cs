@@ -1,5 +1,8 @@
 using EmployeeManagementProject.Application_Layer.Common;
+using EmployeeManagementProject.Application_Layer.Validation;
+using EmployeeManagementProject.Domain_Layer.Entities;
 using EmployeeManagementProject.Infrastructure_Layer;
+using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -12,6 +15,7 @@ builder.Services.AddDbContext<DataContext>(options => options.UseMySql(builder.C
                      ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+builder.Services.AddScoped<IValidator<Employee>, EmployeeValidator>();
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle

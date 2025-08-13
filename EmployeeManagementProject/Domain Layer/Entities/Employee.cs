@@ -4,14 +4,10 @@ namespace EmployeeManagementProject.Domain_Layer.Entities
 {
     public class Employee : Entity
     {
-        [Required(ErrorMessage = "Name is required.")]
         public EmployeeName Name { get; private set; }
 
-        [Required(ErrorMessage = "Address is required.")]
         public string Address { get; private set; }
 
-        [Required(ErrorMessage = "Email is required.")]
-        [EmailAddress(ErrorMessage = "Invalid email format.")]
         public string Email { get; private set; }
 
         public string? Phone { get; private set; }
