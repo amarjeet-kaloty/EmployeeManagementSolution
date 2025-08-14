@@ -32,7 +32,7 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
                 employeeDto.Name,
                 employeeDto.Address,
                 employeeDto.Email,
-                employeeDto.Phone
+                employeeDto.Phone!
             );
 
             Employee newEmployee = await _mediator.Send(command);
