@@ -15,6 +15,7 @@ namespace EmployeeManagementProject.Infrastructure_Layer
 
         public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         {
+            // This is a test
             return await _dbContext.SaveChangesAsync(cancellationToken);
         }
 
