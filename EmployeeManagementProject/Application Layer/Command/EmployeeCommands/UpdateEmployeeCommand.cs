@@ -3,9 +3,9 @@ using MediatR;
 
 namespace EmployeeManagementProject.Application_Layer.Command.EmployeeCommands
 {
-    public class UpdateEmployeeCommand : IRequest<int>
+    public class UpdateEmployeeCommand : IRequest<string>
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
 
         public EmployeeName? Name { get; set; }
 
@@ -15,7 +15,7 @@ namespace EmployeeManagementProject.Application_Layer.Command.EmployeeCommands
 
         public string? Phone { get; set; }
 
-        public UpdateEmployeeCommand(int id, EmployeeName name, string address, string email, string phone)
+        public UpdateEmployeeCommand(string id, EmployeeName name, string address, string email, string phone)
         {
             Id = id;
             Name = name;

@@ -1,6 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
-
-namespace EmployeeManagementProject.Domain_Layer.Entities
+﻿namespace EmployeeManagementProject.Domain_Layer.Entities
 {
     public class Employee : Entity
     {
@@ -16,7 +14,7 @@ namespace EmployeeManagementProject.Domain_Layer.Entities
         {
         }
 
-        public Employee(int id, EmployeeName name, string address, string email, string? phone) : base(id)
+        public Employee(string id, EmployeeName name, string address, string email, string? phone) : base(id)
         {
             Name = name;
             Address = address;
@@ -26,7 +24,7 @@ namespace EmployeeManagementProject.Domain_Layer.Entities
 
         public static Employee Create(string name, string address, string email, string? phone)
         {
-            if (string.IsNullOrWhiteSpace(address)) 
+            if (string.IsNullOrWhiteSpace(address))
                 throw new ArgumentException("Address is required.", nameof(address));
 
             if (string.IsNullOrWhiteSpace(email))

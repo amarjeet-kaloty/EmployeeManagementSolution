@@ -1,13 +1,18 @@
-﻿namespace EmployeeManagementProject.Domain_Layer.Entities
+﻿using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace EmployeeManagementProject.Domain_Layer.Entities
 {
     public abstract class Entity
     {
-        public int Id { get; protected set; }
+        [BsonId]
+        [BsonRepresentation(BsonType.ObjectId)]
+        public string Id { get; protected set; }
 
         protected Entity()
         { }
 
-        protected Entity(int id)
+        protected Entity(string id)
         {
             Id = id;
         }

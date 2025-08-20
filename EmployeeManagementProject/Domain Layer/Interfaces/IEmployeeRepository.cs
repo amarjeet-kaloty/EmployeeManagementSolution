@@ -6,12 +6,12 @@ namespace EmployeeManagementProject.Application_Layer.Common
     {
         public Task AddEmployeeAsync(Employee employee);
 
-        public Task<int> DeleteEmployeeAsync(int id);
+        public Task<int> DeleteEmployeeAsync(string id);
 
-        public Task<Employee> GetEmployeeByIdAsync(int id);
+        public Task UpdateEmployee(Employee employee);
+
+        public Task<Employee> GetEmployeeByIdAsync(string id);
 
         public Task<List<Employee>> GetEmployeeListAsync();
-
-        public void UpdateEmployee(Employee employee);
     }
 }

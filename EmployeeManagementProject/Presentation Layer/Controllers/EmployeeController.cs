@@ -4,6 +4,7 @@ using EmployeeManagementProject.Domain_Layer.Entities;
 using EmployeeManagementProject.Presentation_Layer.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using OpenQA.Selenium;
 
 namespace EmployeeManagementProject.Presentation_Layer.Controllers
 {
@@ -26,7 +27,7 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
         /// The newly created object, including its assigned ID.
         /// </returns>
         [HttpPost]
-        public async Task<ActionResult<Employee>> AddEmployee([FromBody] CreateEmployeeDTO employeeDto)
+        public async Task<ActionResult<EmployeeDTO>> AddEmployee([FromBody] CreateEmployeeDTO employeeDto)
         {
             CreateEmployeeCommand command = new CreateEmployeeCommand(
                 employeeDto.Name,
@@ -42,7 +43,7 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
                 return StatusCode(500, "Failed to create employee. An unexpected error occurred.");
             }
 
-            return Ok(newEmployee);
+            return Ok(EmployeeDTO.FromEmployee(newEmployee));
         }
 
         /// <summary>
@@ -53,30 +54,26 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
         /// An integer representing the number of rows affected.
         /// </returns>
         [HttpPut("{id}")]
-        public async Task<ActionResult<int>> UpdateEmployee(int id, [FromBody] UpdateEmployeeDTO employeeDto)
+        public async Task<ActionResult<int>> UpdateEmployee(string id, [FromBody] UpdateEmployeeDTO employeeDto)
         {
-            if (!ModelState.IsValid)
+            try
             {
-                return BadRequest(ModelState);
+                EmployeeName employeeName = new EmployeeName(employeeDto.Name);
+                var command = new UpdateEmployeeCommand(
+                    id,
+                    employeeName,
+                    employeeDto.Address,
+                    employeeDto.Email,
+                    employeeDto.Phone
+                );
+
+                string updatedEmployeeId = await _mediator.Send(command);
+                return Ok(updatedEmployeeId);
             }
-
-            EmployeeName employeeName = new EmployeeName(employeeDto.Name);
-            var command = new UpdateEmployeeCommand(
-                id,
-                employeeName,
-                employeeDto.Address,
-                employeeDto.Email,
-                employeeDto.Phone
-            );
-
-            int updatedEmployee = await _mediator.Send(command);
-
-            if (updatedEmployee == 0)
+            catch (NotFoundException ex)
             {
-                return NotFound($"Employee with ID {id} not found for update.");
+                return NotFound(ex.Message);
             }
-
-            return Ok(updatedEmployee);
         }
 
         /// <summary>
@@ -87,13 +84,8 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
         /// An integer representing the number of rows affected (typically 1 for successful deletion).
         /// </returns>
         [HttpDelete("{id}")]
-        public async Task<ActionResult<int>> DeleteEmployee(int id)
+        public async Task<ActionResult<int>> DeleteEmployee(string id)
         {
-            if (id <= 0)
-            {
-                return BadRequest("Employee ID must be a positive integer.");
-            }
-
             int employeeDeletedCount = await _mediator.Send(new DeleteEmployeeCommand() { Id = id });
 
             if (employeeDeletedCount == 0)
@@ -125,13 +117,8 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
         /// An employee object corresponding to the provided unique identifier, if one exists.
         /// </returns>
         [HttpGet("{id}")]
-        public async Task<ActionResult<Employee>> GetEmployee(int id)
+        public async Task<ActionResult<EmployeeDTO>> GetEmployee(string id)
         {
-            if (id <= 0)
-            {
-                return BadRequest("Employee ID must be a positive integer.");
-            }
-
             Employee employee = await _mediator.Send(new GetEmployeeByIdQuery() { Id = id });
 
             if (employee == null)
@@ -139,7 +126,7 @@ namespace EmployeeManagementProject.Presentation_Layer.Controllers
                 return NotFound($"Employee with ID {id} not found.");
             }
 
-            return Ok(employee);
+            return Ok(EmployeeDTO.FromEmployee(employee));
         }
     }
 }

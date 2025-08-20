@@ -1,17 +1,17 @@
-﻿using System.Text.Json.Serialization;
+﻿using MongoDB.Bson.Serialization.Attributes;
 
 namespace EmployeeManagementProject.Domain_Layer.Entities
 {
     public class EmployeeName
     {
-        [JsonPropertyName("fullName")]
+        [BsonElement("fullName")]
         public string FullName { get; }
 
         public EmployeeName() : base()
         {
         }
 
-        [JsonConstructor]
+        [BsonConstructor]
         public EmployeeName(string fullName)
         {
             if (string.IsNullOrWhiteSpace(fullName))

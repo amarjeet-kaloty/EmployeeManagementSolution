@@ -4,6 +4,6 @@ namespace EmployeeManagementProject.Application_Layer.Command.EmployeeCommands
 {
     public class DeleteEmployeeCommand : IRequest<int>
     {
-        public int Id { get; set; }
+        public string Id { get; set; }
     }
 }

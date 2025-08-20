@@ -4,31 +4,43 @@ using MediatR;
 
 namespace EmployeeManagementProject.Application_Layer.Command.EmployeeCommands
 {
-    public class UpdateEmployeeHandlers : IRequestHandler<UpdateEmployeeCommand, int>
+    public class UpdateEmployeeHandlers : IRequestHandler<UpdateEmployeeCommand, string>
     {
-        private readonly IEmployeeRepository _employeeRepository;
         private readonly IUnitOfWork _unitOfWork;
 
-        public UpdateEmployeeHandlers(IEmployeeRepository employeeRepository, IUnitOfWork unitOfWork)
+        public UpdateEmployeeHandlers(IUnitOfWork unitOfWork)
         {
-            this._employeeRepository = employeeRepository;
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<int> Handle(UpdateEmployeeCommand request, CancellationToken cancellationToken)
+        public async Task<string> Handle(UpdateEmployeeCommand request, CancellationToken cancellationToken)
         {
-            Employee employee = await _employeeRepository.GetEmployeeByIdAsync(request.Id);
+            await _unitOfWork.BeginTransactionAsync(cancellationToken);
 
-            if (employee == null)
-                return 0;
+            try
+            {
+                Employee employee = await _unitOfWork.EmployeeRepository.GetEmployeeByIdAsync(request.Id);
 
-            employee.UpdateDetails(request.Name, request.Address, request.Email, request.Phone);
+                if (employee == null)
+                    return $"Employee with Id {request.Id} not found.";
 
-            _employeeRepository.UpdateEmployee(employee);
+                employee.UpdateDetails(request.Name!, request.Address!, request.Email!, request.Phone);
 
-            int affectedRows = await _unitOfWork.SaveChangesAsync(cancellationToken);
+                await _unitOfWork.EmployeeRepository.UpdateEmployee(employee);
 
-            return affectedRows;
+                await _unitOfWork.CommitTransactionAsync(cancellationToken);
+
+                return employee.Id;
+            }
+            catch
+            {
+                await _unitOfWork.AbortTransactionAsync(cancellationToken);
+                throw;
+            }
+            finally
+            {
+                _unitOfWork.Dispose();
+            }
         }
     }
 }

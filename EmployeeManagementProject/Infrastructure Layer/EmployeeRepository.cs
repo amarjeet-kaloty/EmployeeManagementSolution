@@ -1,51 +1,52 @@
 ﻿using EmployeeManagementProject.Application_Layer.Common;
 using EmployeeManagementProject.Domain_Layer.Entities;
-using Microsoft.EntityFrameworkCore;
+using MongoDB.Driver;
 
 namespace EmployeeManagementProject.Infrastructure_Layer
 {
     public class EmployeeRepository : IEmployeeRepository
     {
-        private readonly DataContext _dbContext;
+        private readonly IClientSessionHandle _session;
+        private readonly IMongoCollection<Employee> _employees;
 
-        public EmployeeRepository(DataContext dbContext)
+        public EmployeeRepository(IClientSessionHandle session, IMongoDatabase database)
         {
-            _dbContext = dbContext;
+            _session = session;
+            _employees = database.GetCollection<Employee>("employeesCollection");
         }
 
         public async Task AddEmployeeAsync(Employee employee)
         {
-            await _dbContext.Employees.AddAsync(employee);
+            await _employees.InsertOneAsync(employee);
         }
 
-        public async Task<int> DeleteEmployeeAsync(int id)
+        public async Task<int> DeleteEmployeeAsync(string id)
         {
-            var employeeToDelete = await _dbContext.Employees.FindAsync(id);
+            var employeeToDelete = await _employees.Find(x => x.Id == id).FirstOrDefaultAsync();
 
             if (employeeToDelete == null)
             {
                 return 0;
             }
 
-            _dbContext.Employees.Remove(employeeToDelete);
+            await _employees.DeleteOneAsync(emp => emp.Id == employeeToDelete.Id);
 
             return 1;
         }
 
-        public async Task<Employee> GetEmployeeByIdAsync(int id)
+        public async Task<Employee> GetEmployeeByIdAsync(string id)
         {
-            return await _dbContext.Employees.FindAsync(id);
+            return await _employees.Find(x => x.Id == id).FirstOrDefaultAsync();
         }
 
         public async Task<List<Employee>> GetEmployeeListAsync()
         {
-            List<Employee> employees = await _dbContext.Employees.ToListAsync();
-            return employees;
+            return _employees.Find(_ => true).ToList();
         }
 
-        public void UpdateEmployee(Employee employee)
+        public async Task UpdateEmployee(Employee employee)
         {
-            _dbContext.Employees.Update(employee);
+            await _employees.ReplaceOneAsync(x => x.Id == employee.Id, employee);
         }
     }
 }

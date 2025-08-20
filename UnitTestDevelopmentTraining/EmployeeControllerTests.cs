@@ -5,7 +5,9 @@ using EmployeeManagementProject.Presentation_Layer.Controllers;
 using EmployeeManagementProject.Presentation_Layer.DTOs;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using MongoDB.Bson;
 using NSubstitute;
+using OpenQA.Selenium;
 
 namespace UnitTestDevelopmentTraining
 {
@@ -80,14 +82,15 @@ namespace UnitTestDevelopmentTraining
         public async Task GetEmployeeById_ValidId_ReturnsEmployee()
         {
             // Arrange
-            EmployeeName employeeName = new EmployeeName("Test Employee1");
             Employee expectedEmployee = new Employee(
-                id: 1,
-                name: employeeName,
+                id: ObjectId.GenerateNewId().ToString(),
+                name: new EmployeeName("Test Employee1"),
                 address: "123 Praline Ave",
                 email: "employee1@gmail.com",
                 phone: "404-111-1234"
             );
+
+            EmployeeDTO employeeDTO = EmployeeDTO.FromEmployee(expectedEmployee);
 
             _mediator.Send(Arg.Any<GetEmployeeByIdQuery>()).Returns(expectedEmployee);
 
@@ -97,9 +100,9 @@ namespace UnitTestDevelopmentTraining
             // Assert
             await _mediator.Received(1).Send(Arg.Any<GetEmployeeByIdQuery>());
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var actualEmployee = Assert.IsType<Employee>(okResult.Value);
+            EmployeeDTO actualEmployee = Assert.IsType<EmployeeDTO>(okResult.Value);
             Assert.Equal(expectedEmployee.Id, actualEmployee.Id);
-            Assert.Equal(expectedEmployee.Name, actualEmployee.Name);
+            Assert.Equal(expectedEmployee.Name.ToString(), actualEmployee.Name);
             Assert.Equal(expectedEmployee.Address, actualEmployee.Address);
             Assert.Equal(expectedEmployee.Email, actualEmployee.Email);
             Assert.Equal(expectedEmployee.Phone, actualEmployee.Phone);
@@ -111,7 +114,7 @@ namespace UnitTestDevelopmentTraining
             // Arrange
             _mediator.Send(Arg.Any<GetEmployeeByIdQuery>()).Returns(Task.FromResult<Employee>(null));
 
-            var nonExistentId = 101;
+            var nonExistentId = ObjectId.GenerateNewId().ToString();
 
             // Act
             var result = await _controller.GetEmployee(nonExistentId);
@@ -136,7 +139,7 @@ namespace UnitTestDevelopmentTraining
 
             Employee newEmployee = new Employee
             (
-                id: 1,
+                id: ObjectId.GenerateNewId().ToString(),
                 name: new EmployeeName(employeeDto.Name),
                 address: employeeDto.Address,
                 email: employeeDto.Email,
@@ -159,38 +162,13 @@ namespace UnitTestDevelopmentTraining
              cmd.Email == employeeDto.Email));
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var actualEmployee = Assert.IsType<Employee>(okResult.Value);
+            var actualEmployee = Assert.IsType<EmployeeDTO>(okResult.Value);
 
             Assert.Equal(newEmployee.Id, actualEmployee.Id);
-            Assert.Equal(newEmployee.Name, actualEmployee.Name);
+            Assert.Equal(newEmployee.Name.ToString(), actualEmployee.Name);
             Assert.Equal(newEmployee.Address, actualEmployee.Address);
             Assert.Equal(newEmployee.Email, actualEmployee.Email);
             Assert.Equal(newEmployee.Phone, actualEmployee.Phone);
-        }
-
-        [Fact]
-        public async Task AddEmployee_InValidEmployeeModel_ReturnsBadRequest()
-        {
-            // Arrange
-            CreateEmployeeDTO invalidEmployeeDto = new CreateEmployeeDTO
-            {
-                Name = "Test Employee 1",
-                Address = "123 Praline Ave",
-                Email = null,
-                Phone = "404-111-1234"
-            };
-
-            _controller.ModelState.AddModelError(nameof(Employee.Email), "Invalid email format.");
-
-            // Act
-            var result = await _controller.AddEmployee(invalidEmployeeDto);
-
-            // Assert
-            await _mediator.DidNotReceive().Send(Arg.Any<CreateEmployeeCommand>());
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            var modelState = Assert.IsType<SerializableError>(badRequestResult.Value);
-            Assert.True(modelState.ContainsKey(nameof(Employee.Email)));
-            Assert.Contains("Invalid email format.", modelState[nameof(Employee.Email)] as string[]);
         }
 
         [Fact]
@@ -207,7 +185,7 @@ namespace UnitTestDevelopmentTraining
 
             Employee validEmployee = new Employee
             (
-                id: 1,
+                id: ObjectId.GenerateNewId().ToString(),
                 name: new EmployeeName(employeeDto.Name),
                 address: employeeDto.Address,
                 email: employeeDto.Email,
@@ -230,7 +208,7 @@ namespace UnitTestDevelopmentTraining
         public async Task UpdateEmployee_ValidEmployee_ReturnsOkWithUpdatedId()
         {
             // Arrange
-            int employeeIdToUpdate = 1;
+            string employeeIdToUpdate = ObjectId.GenerateNewId().ToString();
 
             UpdateEmployeeDTO updateEmployeeDTO = new UpdateEmployeeDTO
             {
@@ -247,7 +225,7 @@ namespace UnitTestDevelopmentTraining
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var actualUpdatedId = Assert.IsType<int>(okResult.Value);
+            var actualUpdatedId = Assert.IsType<string>(okResult.Value);
             Assert.Equal(employeeIdToUpdate, actualUpdatedId);
         }
 
@@ -255,7 +233,7 @@ namespace UnitTestDevelopmentTraining
         public async Task UpdateEmployee_InValidEmployee_ThrowsException()
         {
             // Arrange
-            int employeeIdToUpdate = 1;
+            string employeeIdToUpdate = ObjectId.GenerateNewId().ToString();
 
             UpdateEmployeeDTO updateEmployeeDTO = new UpdateEmployeeDTO
             {
@@ -275,7 +253,7 @@ namespace UnitTestDevelopmentTraining
         public async Task UpdateEmployee_EmployeeNotFound_ReturnsNotFoundResult()
         {
             // Arrange
-            int nonExistentEmployeeId = 999;
+            string nonExistentEmployeeId = ObjectId.GenerateNewId().ToString();
             UpdateEmployeeDTO updateEmployeeDTO = new UpdateEmployeeDTO
             {
                 Name = "Update Name",
@@ -284,7 +262,7 @@ namespace UnitTestDevelopmentTraining
                 Phone = "404-111-1234"
             };
 
-            _mediator.Send(Arg.Any<UpdateEmployeeCommand>()).Returns(Task.FromResult(0));
+            _mediator.Send(Arg.Any<UpdateEmployeeCommand>()).Returns(Task.FromException<string>(new NotFoundException($"Employee with ID {nonExistentEmployeeId} not found.")));
 
             // Act
             var result = await _controller.UpdateEmployee(nonExistentEmployeeId, updateEmployeeDTO);
@@ -292,14 +270,14 @@ namespace UnitTestDevelopmentTraining
             // Assert
             await _mediator.Received(1).Send(Arg.Is<UpdateEmployeeCommand>(cmd => cmd.Id == nonExistentEmployeeId));
             var notFoundResult = Assert.IsType<NotFoundObjectResult>(result.Result);
-            Assert.Equal($"Employee with ID {nonExistentEmployeeId} not found for update.", notFoundResult.Value);
+            Assert.Equal($"Employee with ID {nonExistentEmployeeId} not found.", notFoundResult.Value);
         }
 
         [Fact]
         public async Task DeleteEmployee_ValidId_ReturnsOkWithDeletedId()
         {
             // Arrange
-            int employeeIdToDelete = 5;
+            string employeeIdToDelete = ObjectId.GenerateNewId().ToString();
 
             _mediator.Send(Arg.Any<DeleteEmployeeCommand>()).Returns(1);
 
@@ -309,32 +287,16 @@ namespace UnitTestDevelopmentTraining
             // Assert
             await _mediator.Received(1).Send(Arg.Is<DeleteEmployeeCommand>(cmd => cmd.Id == employeeIdToDelete));
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var actualDeletedId = Assert.IsType<int>(okResult.Value);
+            var actualDeletedId = Assert.IsType<string>(okResult.Value);
             Assert.Equal(employeeIdToDelete, actualDeletedId);
             Assert.Equal(200, okResult.StatusCode);
-        }
-
-        [Fact]
-        public async Task DeleteEmployee_InvalidId_ReturnsBadRequest()
-        {
-            // Arrange
-            int invalidId = -5;
-
-            // Act
-            var result = await _controller.DeleteEmployee(invalidId);
-
-            // Assert
-            await _mediator.DidNotReceive().Send(Arg.Any<DeleteEmployeeCommand>());
-            var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal(400, badRequestResult.StatusCode);
-            Assert.Equal("Employee ID must be a positive integer.", badRequestResult.Value);
         }
 
         [Fact]
         public async Task DeleteEmployee_EmployeeNotFound_ReturnsNotFoundResult()
         {
             // Arrange
-            int nonExistentId = 999;
+            string nonExistentId = ObjectId.GenerateNewId().ToString();
 
             _mediator.Send(Arg.Any<DeleteEmployeeCommand>()).Returns(Task.FromResult(0));
 
